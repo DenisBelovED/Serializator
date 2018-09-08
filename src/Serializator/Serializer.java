@@ -1,6 +1,8 @@
 package Serializator;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -57,9 +59,23 @@ public class Serializer implements ISerialization {
     @Override
     public <T> T Deserialize(byte[] rawData) {
         String mData = new String(rawData, StandardCharsets.UTF_8);
-        Packet p = ConfigurePacket(ObjectParser(mData));
+        return CreateObject(ConfigurePacket(ObjectParser(mData)));
+    }
 
-        return (T)rawData;
+    private <T> T CreateObject(Packet p){
+        Object obj;
+        try {
+            obj = Class.forName(p.getObjectName()).getConstructor().newInstance();
+        } catch (ClassNotFoundException |
+                NoSuchMethodException |
+                InstantiationException |
+                IllegalAccessException |
+                InvocationTargetException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        return (T)obj;
     }
 
     private Packet ConfigurePacket(String obj){
@@ -107,7 +123,7 @@ public class Serializer implements ISerialization {
         return result;
     }
 
-    private Vector<String> ObjectParser(String raw){
+    private Vector<String> ObjectsParser(String raw){
         Pattern objPattern = Pattern.compile("<(.+?)>((?=<)|(?!]))");
         Matcher objMatches = objPattern.matcher(raw);
         Vector<String> objects = new Vector<String>();
@@ -115,5 +131,12 @@ public class Serializer implements ISerialization {
             objects.add(objMatches.group(1));
         }
         return objects;
+    }
+
+    private String ObjectParser(String raw){
+        Pattern objPattern = Pattern.compile("<(.+?)>((?=<)|(?!]))");
+        Matcher objMatches = objPattern.matcher(raw);
+        objMatches.find();
+        return objMatches.group(1);
     }
 }
