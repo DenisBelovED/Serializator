@@ -3,6 +3,7 @@ package Serializator;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -75,7 +76,61 @@ public class Serializer implements ISerialization {
             return null;
         }
 
+        for (FieldInfo field: p.getObjectFields()){
+            try {
+                switch (field.getTypeName()){
+                    case "boolean":
+                        obj.getClass().getField(field.getVariableName())
+                                .setBoolean(obj, Boolean.parseBoolean(field.getValue()));
+                        break;
+                    case "byte":
+                        obj.getClass().getField(field.getVariableName())
+                                .setByte(obj, Byte.parseByte(field.getValue()));
+                        break;
+                    case "char":
+                        obj.getClass().getField(field.getVariableName())
+                                .setChar(obj, charValueOf(field.getValue()));
+                        break;
+                    case "short":
+                        obj.getClass().getField(field.getVariableName())
+                                .setShort(obj, Short.parseShort(field.getValue()));
+                        break;
+                    case "int":
+                        obj.getClass().getField(field.getVariableName())
+                                .setInt(obj, Integer.parseInt(field.getValue()));
+                        break;
+                    case "long":
+                        obj.getClass().getField(field.getVariableName())
+                                .setLong(obj, Long.parseLong(field.getValue()));
+                        break;
+                    case "float":
+                        obj.getClass().getField(field.getVariableName())
+                                .setFloat(obj, Float.parseFloat(field.getValue()));
+                        break;
+                    case "double":
+                        obj.getClass().getField(field.getVariableName())
+                                .setDouble(obj, Double.parseDouble(field.getValue()));
+                        break;
+                    case "java.lang.String":
+                        obj.getClass().getField(field.getVariableName())
+                                .set(obj, field.getValue());
+                        break;
+                    default:
+                        System.out.println(field.getValue());
+                        break;
+                }
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+
         return (T)obj;
+    }
+
+    private char charValueOf(String s) {
+        if(s.length() != 1)
+            throw new NumberFormatException();
+        return s.charAt(0);
     }
 
     private Packet ConfigurePacket(String obj){
