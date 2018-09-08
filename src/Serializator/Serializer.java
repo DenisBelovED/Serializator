@@ -2,7 +2,6 @@ package Serializator;
 
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,11 +57,9 @@ public class Serializer implements ISerialization {
     @Override
     public <T> T Deserialize(byte[] rawData) {
         String mData = new String(rawData, StandardCharsets.UTF_8);
-        for (String s : ObjectParser(mData)){
-            ConfigurePacket(s);
-        }
+        Packet p = ConfigurePacket(ObjectParser(mData));
 
-        return (T) mData;
+        return (T)rawData;
     }
 
     private Packet ConfigurePacket(String obj){
@@ -70,13 +67,44 @@ public class Serializer implements ISerialization {
         Matcher matches = splitterPattern.matcher(obj);
         matches.find();
         Packet p = new Packet(matches.group(1));
-        FieldsParser(matches.group(2));
+        p.AddVectorFieldInfo(FieldsParser(matches.group(2)));
         return p;
     }
 
-    private Vector<String[]> FieldsParser(String str){
-        System.out.println(str);
-        return null;
+    private Vector<FieldInfo> FieldsParser(String str){
+        Vector<String> nestedObject = new Vector<String>();
+        Vector<FieldInfo> result = new Vector<FieldInfo>();
+        int startIndex = -1;
+        int count = 0;
+        for(int i=0; i<str.length();i++){
+            if (str.charAt(i) == '<'){
+                if (startIndex == -1) startIndex = i;
+                count++;
+            }
+            if (str.charAt(i) == '>'){
+                if (--count == 0) {
+                    nestedObject.add(str.substring(startIndex, i+1));
+                    startIndex = -1;
+                }
+            }
+        }
+        String preparedStr = str;
+        for (String s : nestedObject){
+            int len = preparedStr.indexOf(s);
+            preparedStr = preparedStr.substring(0, len) + preparedStr.substring(len + s.length());
+        }
+        preparedStr = preparedStr.substring(1, preparedStr.length()-1);
+        String[] fieldsStr = preparedStr.split("\\]\\[");
+        for (String f : fieldsStr){
+            String[] fields = f.split(";");
+            if(fields.length == 2) {
+                result.add(new FieldInfo(fields[0], fields[1], nestedObject.firstElement()));
+                nestedObject.remove(0);
+            }
+            else
+                result.add(new FieldInfo(fields[0], fields[1],fields[2]));
+        }
+        return result;
     }
 
     private Vector<String> ObjectParser(String raw){

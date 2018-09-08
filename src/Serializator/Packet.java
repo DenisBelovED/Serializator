@@ -19,6 +19,8 @@ public class Packet {
         ObjectFields.add(fieldInfo);
     }
 
+    public void AddVectorFieldInfo(Vector<FieldInfo> vFileInfo) { ObjectFields = vFileInfo; }
+
     public String getObjectName() {
         return ObjectName;
     }
