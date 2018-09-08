@@ -1,9 +1,7 @@
 package Serializator;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -116,7 +114,8 @@ public class Serializer implements ISerialization {
                                 .set(obj, field.getValue());
                         break;
                     default:
-                        System.out.println(field.getValue());
+                        obj.getClass().getField(field.getVariableName())
+                                .set(obj, CreateObject(ConfigurePacket(ObjectParser(field.getValue()))));
                         break;
                 }
             } catch (NoSuchFieldException | IllegalAccessException e) {
